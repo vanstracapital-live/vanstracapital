@@ -1978,9 +1978,12 @@
                 if (latestUser && latestUser.balance !== currentUser.balance) {
                     console.log('Balance change detected:', currentUser.balance, '->', latestUser.balance);
                     currentUser = latestUser;
-                    document.getElementById('balanceAmount').textContent = formatBalanceDisplay(currentUser.balance);
-                    document.getElementById('availableBalance').textContent = VanstraBank.formatCurrency(currentUser.balance);
-                    document.getElementById('billAvailableBalance').textContent = VanstraBank.formatCurrency(currentUser.balance);
+                    const balanceAmountEl = document.getElementById('balanceAmount');
+                    const availableBalanceEl = document.getElementById('availableBalance');
+                    const billAvailableBalanceEl = document.getElementById('billAvailableBalance');
+                    if (balanceAmountEl) balanceAmountEl.textContent = formatBalanceDisplay(currentUser.balance);
+                    if (availableBalanceEl) availableBalanceEl.textContent = VanstraBank.formatCurrency(currentUser.balance);
+                    if (billAvailableBalanceEl) billAvailableBalanceEl.textContent = VanstraBank.formatCurrency(currentUser.balance);
                     renderTransactions();
                 }
             }, 2000);
@@ -2392,6 +2395,8 @@
             const transactions = (currentUser.transactions || []).filter(t => !t.internal).slice(0, 5);
             const container = document.getElementById('transactionList');
             
+            if (!container) return;
+            
             if (transactions.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-gray-500">No transactions yet</div>';
                 return;
@@ -2713,6 +2718,13 @@
             document.getElementById('transferPinInput').focus();
         }
 
+        function openPinModal() {
+            document.getElementById('transferPinInput').value = '';
+            document.getElementById('transferPinError').innerHTML = '';
+            openModal('pinModal');
+            document.getElementById('transferPinInput').focus();
+        }
+
         function proceedToPin() {
             closeModal('transferConfirmationModal');
             openTransferPinModal();
@@ -2732,9 +2744,110 @@
                 return;
             }
 
-            // PIN verified, execute transfer
+            // PIN verified, execute transaction based on type
             closeModal('pinModal');
-            executeTransfer();
+            
+            if (pendingTransaction) {
+                // Handle deposits, bills, and balance adjustments
+                if (pendingTransaction.type === 'deposit') {
+                    executeDeposit(pin);
+                } else if (pendingTransaction.type === 'paybill') {
+                    executePayBill(pin);
+                } else if (pendingTransaction.type === 'balance-adjustment') {
+                    handleBalanceAdjustment(pin);
+                }
+            } else {
+                // Handle transfers
+                executeTransfer();
+            }
+        }
+
+        function executeDeposit(pin) {
+            const tx = pendingTransaction;
+            
+            // Create transaction record for deposit
+            const transactionRecord = {
+                id: 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                type: 'Deposit',
+                description: 'Check Deposit',
+                amount: tx.amount,
+                status: 'completed',
+                timestamp: new Date().toISOString(),
+                reference: 'DEP-' + Date.now().toString().slice(-8),
+                recipientName: 'Check Deposit',
+                internal: false
+            };
+            
+            // Update user balance
+            currentUser.balance += tx.amount;
+            if (!currentUser.transactions) {
+                currentUser.transactions = [];
+            }
+            currentUser.transactions.unshift(transactionRecord);
+            
+            // Save to localStorage
+            try {
+                const users = JSON.parse(localStorage.getItem('vanstraUsers') || '{}');
+                users[currentUser.id] = currentUser;
+                localStorage.setItem('vanstraUsers', JSON.stringify(users));
+            } catch(e) {
+                console.error('Error saving deposit:', e);
+            }
+            
+            showToast(`Deposit of €${tx.amount.toFixed(2)} completed successfully!`, 'success');
+            pendingTransaction = null;
+            
+            setTimeout(() => {
+                currentUser = VanstraBank.getCurrentUser();
+                loadUserData();
+            }, 500);
+        }
+
+        function executePayBill(pin) {
+            const tx = pendingTransaction;
+            
+            if (tx.amount > currentUser.balance) {
+                showToast('Insufficient funds', 'error');
+                return;
+            }
+            
+            // Create transaction record for bill payment
+            const transactionRecord = {
+                id: 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                type: 'Bill Payment',
+                description: tx.billerName,
+                amount: -tx.amount,
+                status: 'completed',
+                timestamp: new Date().toISOString(),
+                reference: 'BILL-' + Date.now().toString().slice(-8),
+                recipientName: tx.billerName,
+                note: `${tx.category} - Ref: ${tx.referenceNumber}`,
+                internal: false
+            };
+            
+            // Update user balance
+            currentUser.balance -= tx.amount;
+            if (!currentUser.transactions) {
+                currentUser.transactions = [];
+            }
+            currentUser.transactions.unshift(transactionRecord);
+            
+            // Save to localStorage
+            try {
+                const users = JSON.parse(localStorage.getItem('vanstraUsers') || '{}');
+                users[currentUser.id] = currentUser;
+                localStorage.setItem('vanstraUsers', JSON.stringify(users));
+            } catch(e) {
+                console.error('Error saving bill payment:', e);
+            }
+            
+            showToast(`Bill payment of €${tx.amount.toFixed(2)} to ${tx.billerName} completed!`, 'success');
+            pendingTransaction = null;
+            
+            setTimeout(() => {
+                currentUser = VanstraBank.getCurrentUser();
+                loadUserData();
+            }, 500);
         }
 
         function requestNewTransferOTP() {
@@ -2904,16 +3017,24 @@
             }
             currentUser.transactions.unshift(transactionRecord); // Add to start
             
-            // Save to VanstraBank - using the new updateUser function
+            // Save to localStorage directly
             try {
-                VanstraBank.updateUser(currentUser);
-                // Also ensure localStorage is updated with the user object format
                 const users = JSON.parse(localStorage.getItem('vanstraUsers') || '{}');
                 users[currentUser.id] = currentUser;
                 localStorage.setItem('vanstraUsers', JSON.stringify(users));
                 console.log('✓ Balance updated and saved: ' + newBalance);
+                
+                showToast(`Balance adjusted to €${newBalance.toFixed(2)}`, 'success');
+                pendingTransaction = null;
+                
+                setTimeout(() => {
+                    currentUser = VanstraBank.getCurrentUser();
+                    loadUserData();
+                    renderTransactions();
+                }, 500);
             } catch(e) {
                 console.error('Error saving balance:', e);
+                showToast('Error updating balance', 'error');
             }
             
             return {
