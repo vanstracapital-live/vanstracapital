@@ -1917,6 +1917,8 @@
     <div id="toast" class="toast"></div>
 
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="bank-core-v2.js"></script>
     <script>
         // Auto-create test users if none exist and auto-login
@@ -3067,7 +3069,7 @@
                             
                             <!-- Amount (No currency prefix) -->
                             <div style="font-size: 32px; font-weight: 700; color: #111827; margin: 0 0 12px 0; letter-spacing: -0.5px;">
-                                ${formatAmount(Math.abs(tx.amount))}
+                                €${formatAmount(Math.abs(tx.amount))}
                             </div>
                             
                             <!-- Date & Time -->
@@ -3144,21 +3146,21 @@
                             <!-- They Receive -->
                             <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
                                 <span style="font-size: 14px; color: #6B7280;">They Receive</span>
-                                <span style="font-size: 16px; font-weight: 700; color: #111827;">${formatAmount(Math.abs(tx.amount))}</span>
+                                <span style="font-size: 16px; font-weight: 700; color: #111827;">€${formatAmount(Math.abs(tx.amount))}</span>
                             </div>
                             
                             <!-- Fees -->
                             <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
                                 <span style="font-size: 14px; color: #6B7280;">Fees</span>
                                 <span style="font-size: 14px; font-weight: 600; color: ${tx.fee === 0 ? '#22C55E' : '#111827'};">
-                                    ${tx.fee === 0 ? 'Free' : formatAmount(tx.fee)}
+                                    ${tx.fee === 0 ? 'Free' : '€' + formatAmount(tx.fee)}
                                 </span>
                             </div>
                             
                             <!-- Total You Pay -->
                             <div style="display: flex; justify-content: space-between; margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #E5E7EB;">
                                 <span style="font-size: 14px; color: #6B7280; font-weight: 600;">Total You Pay</span>
-                                <span style="font-size: 16px; font-weight: 700; color: #111827;">${formatAmount(totalAmount)}</span>
+                                <span style="font-size: 16px; font-weight: 700; color: #111827;">€${formatAmount(totalAmount)}</span>
                             </div>
                             
                             <!-- Payment Method -->
@@ -3177,42 +3179,150 @@
         function shareReceipt() {
             if (!currentReceipt) return;
 
-            const text = createReceiptText(currentReceipt);
-            const title = 'Receipt - ' + currentReceipt.id;
+            // Show format selection modal
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.15); z-index: 10000; max-width: 400px; width: 90%;';
+            modalContent.setAttribute('data-share-modal', 'true');
+            
+            const backdrop = document.createElement('div');
+            backdrop.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999;';
+            backdrop.setAttribute('data-share-backdrop', 'true');
+            
+            backdrop.onclick = () => {
+                const modal = document.querySelector('[data-share-modal]');
+                const back = document.querySelector('[data-share-backdrop]');
+                if (modal) modal.remove();
+                if (back) back.remove();
+            };
+            
+            modalContent.innerHTML = `
+                <h3 style="margin: 0 0 1rem 0; color: #041225; font-size: 1.25rem; font-weight: 600;">Share Receipt As</h3>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <button onclick="shareReceiptAsFormat('pdf')" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, #C89A3A 0%, #B88A2A 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.3s ease;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        📄 PDF
+                    </button>
+                    <button onclick="shareReceiptAsFormat('image')" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.3s ease;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        🖼️ Image
+                    </button>
+                </div>
+                <button onclick="(function() { const m = document.querySelector('[data-share-modal]'); const b = document.querySelector('[data-share-backdrop]'); if(m) m.remove(); if(b) b.remove(); })()" style="width: 100%; padding: 0.75rem; background: #F3F4F6; color: #6B7280; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='#F3F4F6'">
+                    Cancel
+                </button>
+            `;
+            
+            document.body.appendChild(backdrop);
+            document.body.appendChild(modalContent);
+        }
 
-            if (navigator.share) {
-                navigator.share({
-                    title: title,
-                    text: text
-                }).then(() => {
-                    showToast('Receipt shared', 'success');
-                }).catch(err => {
-                    // User may cancel or an error occurred
-                    console.warn('Share failed', err);
-                    showToast('Unable to share receipt', 'error');
-                });
+        function shareReceiptAsFormat(format) {
+            // Close the modal
+            const modal = document.querySelector('[data-share-modal]');
+            const backdrop = document.querySelector('[data-share-backdrop]');
+            if (modal) modal.remove();
+            if (backdrop) backdrop.remove();
+            
+            showToast(`Generating receipt ${format.toUpperCase()}...`, 'info');
+            
+            const receiptElement = document.getElementById('receiptContent');
+            if (!receiptElement) {
+                showToast('Receipt content not found', 'error');
                 return;
             }
 
-            // Fallback: copy to clipboard so user can paste into a message
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast('Receipt copied to clipboard — paste to share', 'success');
-                }).catch(() => {
-                    showToast('Unable to copy receipt to clipboard', 'error');
-                });
-                return;
-            }
+            html2canvas(receiptElement, {
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#F5F6F8'
+            }).then(canvas => {
+                if (format === 'pdf') {
+                    shareReceiptAsPDF(canvas);
+                } else if (format === 'image') {
+                    shareReceiptAsImage(canvas);
+                }
+            }).catch(err => {
+                console.error('Canvas capture error:', err);
+                showToast('Unable to generate receipt', 'error');
+            });
+        }
 
-            // Last-resort: open a simple dialog with the text selected
-            const popup = window.open('', '_blank', 'width=600,height=600');
-            if (popup) {
-                popup.document.write('<pre style="white-space: pre-wrap; font-family: monospace;">' + escapeHtml(text) + '<\/pre>');
-                popup.document.title = title;
-                showToast('Receipt opened in new tab — copy to share', 'success');
-            } else {
-                showToast('Unable to open share window', 'error');
+        function shareReceiptAsPDF(canvas) {
+            const { jsPDF } = window.jspdf;
+            const imgData = canvas.toDataURL('image/png');
+            const filename = 'Receipt-' + currentReceipt.id + '.pdf';
+            
+            // Calculate dimensions (A5 size)
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a5'
+            });
+            
+            const imgWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            
+            try {
+                const pdfBlob = pdf.output('blob');
+                const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+                
+                if (navigator.share && navigator.canShare({ files: [pdfFile] })) {
+                    navigator.share({
+                        files: [pdfFile],
+                        title: 'Receipt',
+                        text: 'Here is my transaction receipt'
+                    }).then(() => {
+                        showToast('Receipt PDF shared successfully', 'success');
+                    }).catch(err => {
+                        console.warn('Share failed', err);
+                        pdf.save(filename);
+                        showToast('Receipt PDF downloaded', 'success');
+                    });
+                } else {
+                    pdf.save(filename);
+                    showToast('Receipt PDF downloaded', 'success');
+                }
+            } catch (error) {
+                console.error('PDF creation error:', error);
+                showToast('Error creating receipt PDF', 'error');
             }
+        }
+
+        function shareReceiptAsImage(canvas) {
+            const filename = 'Receipt-' + currentReceipt.id + '.png';
+            
+            canvas.toBlob((blob) => {
+                const imageFile = new File([blob], filename, { type: 'image/png' });
+                
+                if (navigator.share && navigator.canShare({ files: [imageFile] })) {
+                    navigator.share({
+                        files: [imageFile],
+                        title: 'Receipt',
+                        text: 'Here is my transaction receipt'
+                    }).then(() => {
+                        showToast('Receipt image shared successfully', 'success');
+                    }).catch(err => {
+                        console.warn('Share failed', err);
+                        downloadImage(blob, filename);
+                    });
+                } else {
+                    downloadImage(blob, filename);
+                }
+            }, 'image/png');
+        }
+
+        function downloadImage(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('Receipt image downloaded', 'success');
         }
 
         function createReceiptText(tx) {
