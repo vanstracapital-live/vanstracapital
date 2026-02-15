@@ -2072,6 +2072,7 @@
         function populateNotifications() {
             populateTransactionsTab();
             populateReportsTab();
+            updateNotificationBadge();
         }
 
         function populateTransactionsTab() {
@@ -2206,6 +2207,23 @@
             alert('You have no new notifications');
         }
 
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notificationBadge');
+            if (!currentUser || !currentUser.transactions) {
+                badge.style.display = 'none';
+                return;
+            }
+
+            const notificationCount = currentUser.transactions.length;
+            
+            if (notificationCount > 0) {
+                badge.textContent = notificationCount > 99 ? '99+' : notificationCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function loadUserData() {
             currentUser = VanstraBank.getCurrentUser();
             if (!currentUser) {
@@ -2243,6 +2261,9 @@
             
             // Update balance timestamp
             updateBalanceTimestamp();
+            
+            // Update notification badge
+            updateNotificationBadge();
         }
 
         function checkAccountStatus() {
