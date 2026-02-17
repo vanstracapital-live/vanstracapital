@@ -662,6 +662,34 @@ const VanstraBank = (function() {
         return Object.values(users).map(sanitizeForAdmin);
     }
 
+    function updateUser(updatedUser) {
+        try {
+            const usersData = localStorage.getItem('vanstraUsers');
+            const users = usersData ? JSON.parse(usersData) : {};
+            
+            if (users[updatedUser.id]) {
+                users[updatedUser.id] = Object.assign({}, users[updatedUser.id], updatedUser);
+                localStorage.setItem('vanstraUsers', JSON.stringify(users));
+                
+                // Sync with Supabase if available
+                if (window.SupabaseDB && window.SupabaseDB.initialized) {
+                    try {
+                        window.SupabaseDB.updateUser(updatedUser.id, updatedUser);
+                    } catch (e) {
+                        console.warn('Failed to sync user update to Supabase', e);
+                    }
+                }
+                
+                // Emit event for real-time updates
+                emit('userUpdated', updatedUser);
+                return { success: true, user: users[updatedUser.id] };
+            }
+            return { success: false, error: 'User not found' };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
+
     function getAdminEvents() {
         return JSON.parse(localStorage.getItem('adminEvents') || '[]');
     }
@@ -1008,6 +1036,7 @@ const VanstraBank = (function() {
         
         // Admin
         getAllUsers,
+        updateUser,
         getAdminEvents,
         getAvailableUsers,
         
