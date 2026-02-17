@@ -1154,15 +1154,15 @@
             </div>
             
             <nav class="nav-menu">
-                <button class="nav-item active" onclick="showSection('dashboard')" data-section="dashboard">
+                <button class="nav-item active" onclick="showSection('dashboard'); closeMobileMenu();" data-section="dashboard">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 11l4-4m0 0l4 4m-4-4V3"></path></svg>
                     Dashboard
                 </button>
-                <button class="nav-item" onclick="showSection('users')" data-section="users">
+                <button class="nav-item" onclick="showSection('users'); closeMobileMenu();" data-section="users">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10h.01M13 16H9m4 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     Users
                 </button>
-                <button class="nav-item" onclick="showSection('transactions')" data-section="transactions">
+                <button class="nav-item" onclick="showSection('transactions'); closeMobileMenu();" data-section="transactions">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     Transactions
                 </button>
