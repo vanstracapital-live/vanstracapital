@@ -28,9 +28,9 @@ const VanstraBank = (function() {
         for (let i = 0; i < str.length; i++) {
             const char = str.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
+            hash = hash & 0xffffffff; // Keep as 32-bit integer
         }
-        return hash.toString(16);
+        return (hash >>> 0).toString(16); // Convert to unsigned before hex
     }
 
     // Generate unique IDs
@@ -48,6 +48,16 @@ const VanstraBank = (function() {
 
     // Initialize system
     function init() {
+        // Version flag to reset corrupted data
+        const currentVersion = '2.1';
+        const storedVersion = localStorage.getItem('vanstraVersion');
+        
+        // Reset users if coming from old version with broken hash
+        if (storedVersion !== currentVersion) {
+            localStorage.removeItem('vanstraUsers');
+            localStorage.setItem('vanstraVersion', currentVersion);
+        }
+        
         if (!localStorage.getItem('vanstraUsers')) {
             localStorage.setItem('vanstraUsers', JSON.stringify({}));
         }
