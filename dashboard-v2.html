@@ -1455,6 +1455,165 @@
                 transform: none;
             }
         }
+
+        /* Bank Selector Styles */
+        .bank-search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .bank-search-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(200, 154, 58, 0.1);
+        }
+
+        .bank-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+        }
+
+        .bank-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .bank-item:last-child {
+            border-bottom: none;
+        }
+
+        .bank-item:hover {
+            background-color: #F9FAFB;
+        }
+
+        .bank-flag {
+            font-size: 2rem;
+            min-width: 2.5rem;
+            text-align: center;
+        }
+
+        .bank-info {
+            flex: 1;
+        }
+
+        .bank-name {
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bank-country {
+            font-size: 0.875rem;
+            color: #6B7280;
+            margin-top: 0.125rem;
+        }
+
+        .no-banks-found {
+            padding: 2rem;
+            text-align: center;
+            color: #6B7280;
+            font-size: 0.95rem;
+        }
+
+        /* Dark Mode - Bank Selector */
+        @media (prefers-color-scheme: dark) {
+            .bank-search-input {
+                background: white;
+                border-color: #E5E7EB;
+                color: #1F2937;
+            }
+
+            .bank-search-input:focus {
+                border-color: var(--gold);
+                box-shadow: 0 0 0 3px rgba(200, 154, 58, 0.1);
+            }
+
+            .bank-list {
+                background: white;
+                border-color: #E5E7EB;
+            }
+
+            .bank-item {
+                color: #1F2937;
+            }
+
+            .bank-item:hover {
+                background-color: #F9FAFB;
+            }
+
+            .bank-name {
+                color: #1F2937;
+            }
+
+            .bank-country {
+                color: #6B7280;
+            }
+
+            .no-banks-found {
+                color: #6B7280;
+            }
+
+            /* Modal background stays white */
+            .modal-sheet {
+                background: white;
+            }
+
+            .modal-header {
+                background: white;
+                border-bottom: 1px solid #E5E7EB;
+            }
+
+            .modal-title {
+                color: #1F2937;
+            }
+
+            .modal-close {
+                color: #6B7280;
+            }
+
+            .modal-body {
+                background: white;
+                color: #1F2937;
+            }
+
+            .form-input {
+                background: white !important;
+                color: #1F2937 !important;
+                border-color: #E5E7EB !important;
+            }
+
+            .form-input:focus {
+                border-color: var(--gold) !important;
+            }
+
+            .form-label {
+                color: #1F2937 !important;
+            }
+
+            .btn-secondary {
+                background: #F3F4F6 !important;
+                color: #1F2937 !important;
+                border-color: #E5E7EB !important;
+            }
+
+            .btn-secondary:hover {
+                background: #E5E7EB !important;
+            }
+        }
     </style>
     
     <!-- Notification Module -->
@@ -1678,17 +1837,10 @@
 
                         <div class="form-group">
                             <label class="form-label">Bank Name</label>
-                            <select id="externalBankName" class="form-select">
-                                <option value="">Select a bank...</option>
-                                <option value="Deutsche Bank">Deutsche Bank</option>
-                                <option value="Commerzbank">Commerzbank</option>
-                                <option value="Westdeutsche Landesbank">Westdeutsche Landesbank</option>
-                                <option value="Bayerische Landesbank">Bayerische Landesbank</option>
-                                <option value="Dresdner Bank">Dresdner Bank</option>
-                                <option value="ING-DiBa">ING-DiBa</option>
-                                <option value="Comdirect">Comdirect</option>
-                                <option value="Other">Other Bank</option>
-                            </select>
+                            <button type="button" class="form-input" onclick="openTransferBankSelector()" style="text-align: left; background: #F3F4F6; cursor: pointer; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 0.5rem;">
+                                <span id="transferSelectedBank" style="color: #6B7280;">Select a bank...</span>
+                            </button>
+                            <input type="hidden" id="externalBankName" value="">
                         </div>
 
                         <div class="form-group">
@@ -1715,6 +1867,60 @@
                         <button type="submit" class="btn btn-primary">Proceed to Verification</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Bank Selector Modal -->
+    <div id="transferBankModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'transferBankModal')">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3 class="modal-title">Select Your Bank</h3>
+                <button class="modal-close" onclick="closeModal('transferBankModal')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="transferBankSearch" class="bank-search-input" placeholder="Search banks..." onkeyup="filterTransferBanks()" style="width: 100%; padding: 0.75rem; border: 2px solid #E5E7EB; border-radius: 0.5rem; font-size: 1rem; margin-bottom: 1rem; transition: border-color 0.3s;">
+                <div class="bank-list" id="transferBankList" style="max-height: 400px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 0.5rem;">
+                    <!-- Banks will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bank Modal -->
+    <div id="addBankModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addBankModal')">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Bank</h3>
+                <button class="modal-close" onclick="closeModal('addBankModal')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addBankForm" onsubmit="submitAddBank(event)">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1F2937; font-size: 0.95rem;">Bank Name</label>
+                        <input type="text" id="newBankName" class="form-input" placeholder="Enter bank name" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.5rem; font-size: 1rem; background: white;" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1F2937; font-size: 0.95rem;">Country</label>
+                        <input type="text" id="newBankCountry" class="form-input" placeholder="Enter country" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.5rem; font-size: 1rem; background: white;" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1F2937; font-size: 0.95rem;">SWIFT Code (Optional)</label>
+                        <input type="text" id="newBankSwiftCode" class="form-input" placeholder="Enter SWIFT code" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.5rem; font-size: 1rem; background: white; text-transform: uppercase;" maxlength="11">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addBankModal')" style="flex: 1; padding: 0.75rem; background: #F3F4F6; color: #1F2937; border: 1px solid #E5E7EB; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.75rem; background: var(--gold); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">Add Bank</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -3825,6 +4031,235 @@
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 3000);
+        }
+
+        // Transfer Bank Selector Data
+        const transferBanksDatabase = [
+            // United States
+            { name: 'Bank of America', country: 'United States', code: 'BOA', color: '#FF6B35', initials: 'BA' },
+            { name: 'JPMorgan Chase', country: 'United States', code: 'JPM', color: '#0066CC', initials: 'JP' },
+            { name: 'Wells Fargo', country: 'United States', code: 'WFC', color: '#D9252C', initials: 'WF' },
+            { name: 'Citigroup', country: 'United States', code: 'C', color: '#0066B2', initials: 'CI' },
+            { name: 'Goldman Sachs', country: 'United States', code: 'GS', color: '#003366', initials: 'GS' },
+            { name: 'Morgan Stanley', country: 'United States', code: 'MS', color: '#0066CC', initials: 'MS' },
+            { name: 'U.S. Bank', country: 'United States', code: 'USB', color: '#003399', initials: 'US' },
+            { name: 'Charles Schwab', country: 'United States', code: 'SCHW', color: '#004225', initials: 'CS' },
+            { name: 'Capital One', country: 'United States', code: 'COF', color: '#013166', initials: 'C1' },
+            { name: 'Ally Bank', country: 'United States', code: 'ALLY', color: '#FF6600', initials: 'AB' },
+            
+            // United Kingdom
+            { name: 'Barclays', country: 'United Kingdom', code: 'BARC', color: '#00A3E0', initials: 'BC' },
+            { name: 'HSBC', country: 'United Kingdom', code: 'HSBA', color: '#CE1126', initials: 'HS' },
+            { name: 'Lloyds Banking Group', country: 'United Kingdom', code: 'LLOY', color: '#00AA44', initials: 'LY' },
+            { name: 'Royal Bank of Scotland', country: 'United Kingdom', code: 'RBS', color: '#C41E3A', initials: 'RB' },
+            { name: 'Standard Chartered', country: 'United Kingdom', code: 'STAN', color: '#003D7A', initials: 'SC' },
+            { name: 'Revolut', country: 'United Kingdom', code: 'REV', color: '#222D5F', initials: 'RV' },
+            { name: 'Wise', country: 'United Kingdom', code: 'WISE', color: '#0066CC', initials: 'WS' },
+            
+            // Canada
+            { name: 'Royal Bank of Canada', country: 'Canada', code: 'RY', color: '#004098', initials: 'RY' },
+            { name: 'TD Bank', country: 'Canada', code: 'TD', color: '#00AA44', initials: 'TD' },
+            { name: 'Bank of Nova Scotia', country: 'Canada', code: 'BNS', color: '#C41E3A', initials: 'BS' },
+            { name: 'Bank of Montreal', country: 'Canada', code: 'BMO', color: '#0066CC', initials: 'BM' },
+            { name: 'CIBC', country: 'Canada', code: 'CM', color: '#A61930', initials: 'CB' },
+            
+            // Germany
+            { name: 'Deutsche Bank', country: 'Germany', code: 'DBK', color: '#002D5E', initials: 'DB' },
+            { name: 'Commerzbank', country: 'Germany', code: 'CBK', color: '#004999', initials: 'CB' },
+            { name: 'Bayerische Motoren Werke Bank', country: 'Germany', code: 'BMW', color: '#0066B2', initials: 'BM' },
+            { name: 'DZ Bank', country: 'Germany', code: 'DZB', color: '#003D7A', initials: 'DZ' },
+            
+            // France
+            { name: 'BNP Paribas', country: 'France', code: 'BNP', color: '#004B87', initials: 'BP' },
+            { name: 'Société Générale', country: 'France', code: 'GLE', color: '#0066CC', initials: 'SG' },
+            { name: 'Crédit Agricole', country: 'France', code: 'ACA', color: '#00AA44', initials: 'CA' },
+            { name: 'La Banque Postale', country: 'France', code: 'LBP', color: '#FDB715', initials: 'LB' },
+            
+            // Japan
+            { name: 'Mitsubishi UFJ Financial Group', country: 'Japan', code: 'MUFG', color: '#E30613', initials: 'MU' },
+            { name: 'Sumitomo Mitsui Financial Group', country: 'Japan', code: 'SMFG', color: '#003D7A', initials: 'SM' },
+            { name: 'Mizuho Financial Group', country: 'Japan', code: 'MFG', color: '#E30613', initials: 'MZ' },
+            { name: 'Nomura Holdings', country: 'Japan', code: 'NOM', color: '#003399', initials: 'NM' },
+            
+            // China
+            { name: 'Industrial and Commercial Bank of China', country: 'China', code: 'ICBC', color: '#C41E3A', initials: 'IC' },
+            { name: 'China Construction Bank', country: 'China', code: 'CCB', color: '#A61830', initials: 'CC' },
+            { name: 'Bank of China', country: 'China', code: 'BOC', color: '#E30613', initials: 'BC' },
+            { name: 'Agricultural Bank of China', country: 'China', code: 'ABC', color: '#2D8659', initials: 'AB' },
+            
+            // India
+            { name: 'State Bank of India', country: 'India', code: 'SBI', color: '#1F4788', initials: 'SB' },
+            { name: 'HDFC Bank', country: 'India', code: 'HDFC', color: '#0066B2', initials: 'HD' },
+            { name: 'ICICI Bank', country: 'India', code: 'ICICI', color: '#004B87', initials: 'IC' },
+            { name: 'Axis Bank', country: 'India', code: 'AXIS', color: '#004998', initials: 'AX' },
+            { name: 'Kotak Mahindra Bank', country: 'India', code: 'KMB', color: '#8B0000', initials: 'KM' },
+            
+            // Australia
+            { name: 'Commonwealth Bank of Australia', country: 'Australia', code: 'CBA', color: '#1A472B', initials: 'CB' },
+            { name: 'Westpac', country: 'Australia', code: 'WBC', color: '#003478', initials: 'WP' },
+            { name: 'ANZ Bank', country: 'Australia', code: 'ANZ', color: '#0066B3', initials: 'AZ' },
+            { name: 'NAB', country: 'Australia', code: 'NAB', color: '#8B0000', initials: 'NB' },
+            
+            // Switzerland
+            { name: 'UBS', country: 'Switzerland', code: 'UBSG', color: '#EB001B', initials: 'UB' },
+            { name: 'Credit Suisse', country: 'Switzerland', code: 'CS', color: '#0033A0', initials: 'CS' },
+            { name: 'Zurich Cantonal Bank', country: 'Switzerland', code: 'ZKB', color: '#004B87', initials: 'ZK' },
+            
+            // Singapore
+            { name: 'DBS Bank', country: 'Singapore', code: 'D05', color: '#D92228', initials: 'DB' },
+            { name: 'OCBC Bank', country: 'Singapore', code: 'O39', color: '#E30613', initials: 'OC' },
+            { name: 'United Overseas Bank', country: 'Singapore', code: 'U11', color: '#FF0000', initials: 'UO' },
+            
+            // Hong Kong
+            { name: 'HSBC Hong Kong', country: 'Hong Kong', code: 'HSBC-HK', color: '#EB001B', initials: 'HS' },
+            { name: 'Bank of China Hong Kong', country: 'Hong Kong', code: 'BOC-HK', color: '#E30613', initials: 'BC' },
+            { name: 'Standard Chartered Hong Kong', country: 'Hong Kong', code: 'SC-HK', color: '#003D7A', initials: 'SC' },
+            
+            // Brazil
+            { name: 'Banco do Brasil', country: 'Brazil', code: 'BBAS', color: '#003C7F', initials: 'BB' },
+            { name: 'Bradesco', country: 'Brazil', code: 'BBD', color: '#C41C3B', initials: 'BD' },
+            { name: 'Itaú Unibanco', country: 'Brazil', code: 'ITUB', color: '#E30613', initials: 'IT' },
+            { name: 'Caixa Econômica Federal', country: 'Brazil', code: 'CEF', color: '#0066B2', initials: 'CX' },
+            
+            // Mexico
+            { name: 'BBVA México', country: 'Mexico', code: 'BBVA', color: '#0066B2', initials: 'BM' },
+            { name: 'Banco Santander México', country: 'Mexico', code: 'SAN', color: '#FF0000', initials: 'SM' },
+            { name: 'Scotiabank México', country: 'Mexico', code: 'SCBM', color: '#004B87', initials: 'SB' },
+            { name: 'HSBC México', country: 'Mexico', code: 'HSBC-MX', color: '#EB001B', initials: 'HM' },
+            
+            // South Africa
+            { name: 'ABSA Group', country: 'South Africa', code: 'ABSA', color: '#00A3E0', initials: 'AB' },
+            { name: 'Standard Bank Group', country: 'South Africa', code: 'SBK', color: '#003D7A', initials: 'SB' },
+            { name: 'FirstRand Limited', country: 'South Africa', code: 'FSR', color: '#0066B2', initials: 'FR' },
+            { name: 'Nedbank Group', country: 'South Africa', code: 'NED', color: '#00AA44', initials: 'ND' },
+        ];
+
+        let allTransferBanks = [...transferBanksDatabase];
+
+        function getBankLogo(bank) {
+            return `<div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: ${bank.color}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">${bank.initials}</div>`;
+        }
+
+        function openTransferBankSelector() {
+            // Reset search
+            document.getElementById('transferBankSearch').value = '';
+            allTransferBanks = [...transferBanksDatabase];
+            renderTransferBankList(allTransferBanks);
+            openModal('transferBankModal');
+        }
+
+        function renderTransferBankList(banks) {
+            const bankList = document.getElementById('transferBankList');
+            
+            if (banks.length === 0) {
+                bankList.innerHTML = `
+                    <div class="no-banks-found">
+                        <div style="margin-bottom: 1rem;">No banks found matching your search.</div>
+                        <button onclick="openAddBankForm()" type="button" style="width: 100%; padding: 0.75rem; background: var(--gold); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                            + Add Bank
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = banks.map(bank => `
+                <div class="bank-item" onclick="selectTransferBank('${bank.name}', '${bank.code}')">
+                    ${getBankLogo(bank)}
+                    <div class="bank-info">
+                        <div class="bank-name">${bank.name}</div>
+                        <div class="bank-country">${bank.country}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add "Add Bank" option at the end
+            html += `
+                <div style="padding: 1rem; border-top: 1px solid #E5E7EB; text-align: center; background: #F9FAFB;">
+                    <button onclick="openAddBankForm()" type="button" style="color: var(--gold); background: none; border: none; font-weight: 600; cursor: pointer; font-size: 0.95rem;">
+                        + Add Bank Not Listed
+                    </button>
+                </div>
+            `;
+            
+            bankList.innerHTML = html;
+        }
+
+        function filterTransferBanks() {
+            const searchTerm = document.getElementById('transferBankSearch').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                allTransferBanks = [...transferBanksDatabase];
+            } else {
+                allTransferBanks = transferBanksDatabase.filter(bank => 
+                    bank.name.toLowerCase().includes(searchTerm) || 
+                    bank.country.toLowerCase().includes(searchTerm) ||
+                    bank.code.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            renderTransferBankList(allTransferBanks);
+        }
+
+        function selectTransferBank(bankName, bankCode) {
+            try {
+                // Update display
+                const selectedBankName = document.getElementById('transferSelectedBank');
+                if (selectedBankName) {
+                    selectedBankName.textContent = bankName;
+                    selectedBankName.style.color = '#111827';
+                }
+                
+                // Store for form submission in hidden input
+                const bankInput = document.getElementById('externalBankName');
+                if (bankInput) {
+                    bankInput.value = bankName;
+                }
+                
+                closeModal('transferBankModal');
+                showToast(`${bankName} selected`, 'success');
+            } catch (e) {
+                console.log('Error selecting bank:', e);
+                showToast('Error selecting bank', 'error');
+            }
+        }
+
+        function openAddBankForm() {
+            closeModal('transferBankModal');
+            openModal('addBankModal');
+        }
+
+        function submitAddBank(event) {
+            event.preventDefault();
+            
+            const bankName = document.getElementById('newBankName').value.trim();
+            const bankCountry = document.getElementById('newBankCountry').value.trim();
+            const bankSwiftCode = document.getElementById('newBankSwiftCode').value.trim().toUpperCase();
+            
+            if (!bankName || !bankCountry) {
+                showToast('Please enter bank name and country', 'error');
+                return;
+            }
+            
+            // Generate initials from bank name
+            const initials = bankName.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('');
+            
+            // Add to database with default color
+            transferBanksDatabase.push({
+                name: bankName,
+                country: bankCountry,
+                code: bankSwiftCode || 'CUSTOM',
+                color: '#6366F1',
+                initials: initials
+            });
+            
+            // Select the new bank
+            selectTransferBank(bankName, bankSwiftCode || 'CUSTOM');
+            
+            // Reset form
+            document.getElementById('addBankForm').reset();
+            closeModal('addBankModal');
+            showToast(`${bankName} added and selected`, 'success');
         }
     </script>
 

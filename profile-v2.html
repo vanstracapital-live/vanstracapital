@@ -432,6 +432,83 @@
         .nav-item svg { width: 24px; height: 24px; }
         .nav-item span { font-size: 11px; font-weight: 500; }
         
+        /* Bank Search Modal Styles */
+        .bank-search-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+        
+        .bank-search-input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        
+        .bank-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 12px;
+        }
+        
+        .bank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .bank-item:last-child {
+            border-bottom: none;
+        }
+        
+        .bank-item:hover {
+            background: #F9FAFB;
+        }
+        
+        .bank-item:active {
+            background: #F3F4F6;
+        }
+        
+        .bank-flag {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .bank-info {
+            flex: 1;
+        }
+        
+        .bank-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1F2937;
+        }
+        
+        .bank-country {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+        
+        .no-banks-found {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #6B7280;
+        }
+        
         @media (min-width: 768px) {
             body {
                 max-width: 480px;
@@ -771,6 +848,7 @@
         </div>
     </div>
 
+    <!-- Bank Selector Modal -->
     <!-- Toast -->
     <div id="toast" class="toast"></div>
 
@@ -994,6 +1072,11 @@
                 toast.classList.remove('show');
             }, 3000);
         }
+
+        // Load on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfileData();
+        });
     </script>
 
     <!-- Live chat removed -->
