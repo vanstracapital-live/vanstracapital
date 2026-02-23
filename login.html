@@ -182,7 +182,14 @@
             setTimeout(() => {
                 const result = VanstraBank.requestPasswordReset(email);
                 if (result.success) {
-                    if (successMsg) { successMsg.textContent = result.message; successMsg.classList.add('show'); }
+                    if (successMsg) {
+                        successMsg.textContent = result.message;
+                        // if the link is available (dev mode), show it directly
+                        if (result.resetLink) {
+                            successMsg.textContent += '\n' + result.resetLink;
+                        }
+                        successMsg.classList.add('show');
+                    }
                     setTimeout(() => { closeForgotModal(); }, 2500);
                 } else {
                     if (errorMsg) { errorMsg.textContent = result.error; errorMsg.classList.add('show'); }

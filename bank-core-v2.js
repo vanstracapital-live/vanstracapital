@@ -48,16 +48,23 @@ const VanstraBank = (function() {
 
     // Initialize system
     function init() {
-        // Version flag to reset corrupted data
+        // Version flag previously used to reset corrupted data during early
+        // development.  Clearing all users on every upgrade meant that
+        // anyone who created an account would suddenly disappear after the
+        // next release, causing "wrong password" errors and broken reset
+        // flows.  We now keep existing data and only bump the stored version.
         const currentVersion = '2.1';
         const storedVersion = localStorage.getItem('vanstraVersion');
-        
-        // Reset users if coming from old version with broken hash
+
         if (storedVersion !== currentVersion) {
-            localStorage.removeItem('vanstraUsers');
+            // do not delete users – only record the upgrade so we can run
+            // migrations in future if necessary
             localStorage.setItem('vanstraVersion', currentVersion);
+
+            // (optional) perform any one‑time migrations here
+            // e.g. migrate old hash formats, add new fields, etc.
         }
-        
+
         if (!localStorage.getItem('vanstraUsers')) {
             localStorage.setItem('vanstraUsers', JSON.stringify({}));
         }
@@ -927,16 +934,22 @@ const VanstraBank = (function() {
             };
             localStorage.setItem('passwordResetRequests', JSON.stringify(resetRequests));
 
-            // Simulate sending email with reset link
+            // Simulate sending email with reset link.  We always log the link so
+            // that developers/testers can retrieve it if the real mail service
+            // isn't configured or fails.
             const resetLink = `${window.location.origin}/reset-password.html?token=${resetToken}`;
             sendEmail(email, 'Password Reset Request', 
                 `Click the link below to reset your password. This link expires in 1 hour.\n\n${resetLink}\n\nIf you didn't request this, please ignore this email.`
             );
 
-            // Log the event
-            emit('password_reset_requested', { email, timestamp: new Date().toISOString() });
+            // also output to console for debugging
+            console.log('[VanstraBank] password reset link for', email, resetLink);
 
-            return { success: true, message: 'If an account with this email exists, a reset link has been sent.' };
+            // Log the event
+            emit('password_reset_requested', { email, timestamp: new Date().toISOString(), resetLink });
+
+            return { success: true, message: 'If an account with this email exists, a reset link has been sent.', resetLink };
+
         } catch (e) {
             return { success: false, error: e.message };
         }
@@ -1010,6 +1023,136 @@ const VanstraBank = (function() {
         }
     }
 
+    // ==================== ACCOUNT SUSPENSION VERIFICATION ====================
+    
+    // Verification codes for suspended/frozen accounts
+    // These are retrieved from admin-set codes stored per user
+    const SUSPENSION_CODES = {
+        COT: '962101',      // Customer Offset Token
+        AFD: '385247',      // Account Freeze Directive
+        SVR: '704856',      // Suspension Verification Request
+        ACE: '521690',      // Account Clearance Encryption
+        FVP: '813429'       // Final Verification Protocol
+    };
+
+    function getAccountSuspensionStatus() {
+        const user = getCurrentUser();
+        console.log('👤 Current User:', user);
+        
+        if (!user) {
+            console.log('❌ No user found!');
+            return { isSuspended: false };
+        }
+        
+        // Check both status and accountStatus for compatibility
+        const isSuspended = user.accountStatus === 'frozen' || user.accountStatus === 'suspended' || user.accountStatus === 'locked' ||
+                          user.status === 'frozen' || user.status === 'suspended' || user.status === 'locked';
+        
+        console.log('🔒 Account Status Check:', {
+            accountStatus: user.accountStatus,
+            status: user.status,
+            isSuspended
+        });
+        
+        return {
+            isSuspended,
+            status: user.accountStatus || user.status,
+            userId: user.id
+        };
+    }
+
+    function initializeSuspensionChallenge(userId) {
+        // Create a new suspension challenge session
+        const challenge = {
+            userId,
+            codesRequired: ['COT', 'AFD', 'SVR', 'ACE', 'FVP'],
+            codesEntered: [],
+            currentStep: 0,
+            startTime: new Date().toISOString(),
+            sessionId: 'SUSP-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6)
+        };
+        
+        // Store in sessionStorage so it persists during the session
+        sessionStorage.setItem('suspensionChallenge', JSON.stringify(challenge));
+        
+        return challenge;
+    }
+
+    function getCurrentSuspensionChallenge() {
+        const challenge = sessionStorage.getItem('suspensionChallenge');
+        return challenge ? JSON.parse(challenge) : null;
+    }
+
+    function verifySuspensionCode(code) {
+        const challenge = getCurrentSuspensionChallenge();
+        if (!challenge) {
+            return { success: false, error: 'No active verification challenge' };
+        }
+
+        const currentCodeRequired = challenge.codesRequired[challenge.currentStep];
+        const expectedCode = SUSPENSION_CODES[currentCodeRequired];
+
+        if (code.trim() !== expectedCode) {
+            return { 
+                success: false, 
+                error: 'Invalid code. Please check your verification letter from admin.',
+                currentStep: challenge.currentStep,
+                totalSteps: challenge.codesRequired.length
+            };
+        }
+
+        // Code is correct
+        challenge.codesEntered.push({
+            code: currentCodeRequired,
+            enteredAt: new Date().toISOString(),
+            verified: true
+        });
+        challenge.currentStep++;
+
+        // Check if all codes have been verified
+        if (challenge.currentStep >= challenge.codesRequired.length) {
+            // All codes verified - unlock the account
+            const users = JSON.parse(localStorage.getItem('vanstraUsers'));
+            const user = users[challenge.userId];
+            if (user) {
+                user.status = 'active';
+                user.suspensionVerifiedAt = new Date().toISOString();
+                users[challenge.userId] = user;
+                localStorage.setItem('vanstraUsers', JSON.stringify(users));
+            }
+            
+            // Clear the challenge
+            sessionStorage.removeItem('suspensionChallenge');
+            
+            emit('account_unsuspended', { userId: challenge.userId, timestamp: new Date().toISOString() });
+            
+            return {
+                success: true,
+                completed: true,
+                message: 'Account verification complete! Your account is now active.',
+                nextStep: null
+            };
+        }
+
+        // Update the challenge
+        sessionStorage.setItem('suspensionChallenge', JSON.stringify(challenge));
+
+        const nextCode = challenge.codesRequired[challenge.currentStep];
+        return {
+            success: true,
+            completed: false,
+            message: `Code verified! ${challenge.codesRequired.length - challenge.currentStep} more code(s) required.`,
+            currentStep: challenge.currentStep,
+            totalSteps: challenge.codesRequired.length,
+            nextCode,
+            progress: Math.round((challenge.currentStep / challenge.codesRequired.length) * 100)
+        };
+    }
+
+    function clearSuspensionChallenge() {
+        sessionStorage.removeItem('suspensionChallenge');
+    }
+
     // ==================== PUBLIC API ====================
 
     return {
@@ -1049,6 +1192,13 @@ const VanstraBank = (function() {
         updateUser,
         getAdminEvents,
         getAvailableUsers,
+        
+        // Account Suspension Verification
+        getAccountSuspensionStatus,
+        initializeSuspensionChallenge,
+        getCurrentSuspensionChallenge,
+        verifySuspensionCode,
+        clearSuspensionChallenge,
         
         // Events
         on,

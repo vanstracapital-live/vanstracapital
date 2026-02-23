@@ -785,6 +785,333 @@
             max-height: calc(90vh - 70px);
         }
         
+        /* Suspension Verification Modal */
+        .suspension-verification-modal {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            backdrop-filter: blur(12px);
+            animation: fadeInOverlay 0.4s ease;
+        }
+        
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .suspension-verification-modal.active {
+            display: flex;
+        }
+        
+        .suspension-verification-content {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            border-radius: 24px;
+            padding: 2.5rem;
+            max-width: 550px;
+            width: 90%;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
+            animation: slideInCenter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .suspension-verification-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #C89A3A 0%, #E6B547 100%);
+        }
+        
+        @keyframes slideInCenter {
+            from {
+                opacity: 0;
+                transform: scale(0.85) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        .suspension-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        
+        .suspension-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+            flex-shrink: 0;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .suspension-header-text h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .suspension-header-text p {
+            margin: 0.5rem 0 0 0;
+            font-size: 14px;
+            color: #6B7280;
+            line-height: 1.5;
+        }
+        
+        .suspension-progress {
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, rgba(200, 154, 58, 0.05) 0%, rgba(200, 154, 58, 0.02) 100%);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(200, 154, 58, 0.2);
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            gap: 0.5rem;
+        }
+        
+        .progress-step {
+            flex: 1;
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-step.completed {
+            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+        }
+        
+        .progress-step.active {
+            background: linear-gradient(90deg, #C89A3A 0%, #E6B547 100%);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .progress-text {
+            font-size: 12px;
+            color: #6B7280;
+            text-align: center;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .verification-message {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 1.5px solid #FCD34D;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.75rem;
+            font-size: 13px;
+            color: #78350F;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .verification-message::before {
+            content: '⚠️';
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+        
+        .verification-message.error {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border-color: #FECACA;
+            color: #7F1D1D;
+        }
+        
+        .verification-message.error::before {
+            content: '❌';
+        }
+        
+        .verification-message.success {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border-color: #A7F3D0;
+            color: #065F46;
+        }
+        
+        .verification-message.success::before {
+            content: '✅';
+        }
+        
+        .code-input-group {
+            margin-bottom: 2rem;
+        }
+        
+        .code-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .code-label-hint {
+            font-weight: 500;
+            color: #9CA3AF;
+            font-size: 11px;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        
+        .code-input-wrapper {
+            position: relative;
+        }
+        
+        .code-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .code-input::placeholder {
+            color: #D1D5DB;
+            letter-spacing: 3px;
+        }
+        
+        .code-input:focus {
+            outline: none;
+            border-color: #C89A3A;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(200, 154, 58, 0.15);
+        }
+        
+        .code-input.error {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+            animation: shake 0.4s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        
+        .suspension-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1rem;
+        }
+        
+        .btn-cancel {
+            padding: 1rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            background: white;
+            color: #6B7280;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-cancel:hover {
+            border-color: #D1D5DB;
+            background: #F9FAFB;
+            color: #374151;
+            transform: translateY(-2px);
+        }
+        
+        .btn-submit {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-submit:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-submit:active {
+            transform: translateY(-1px);
+        }
+        
         /* Form Elements */
         .form-group { margin-bottom: 1.25rem; }
         
@@ -1680,7 +2007,7 @@
 
     <!-- Quick Actions Buttons -->
     <section class="quick-actions">
-        <div class="quick-action" onclick="openTransferModal()">
+        <div class="quick-action" onclick="if(interceptQuickAction('transfer')) openTransferModal()">
             <div class="quick-action-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
@@ -1689,7 +2016,7 @@
             <span class="quick-action-label">Transfer</span>
         </div>
         
-        <div class="quick-action" onclick="openDepositModal()">
+        <div class="quick-action" onclick="if(interceptQuickAction('deposit')) openDepositModal()">
             <div class="quick-action-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
@@ -1699,7 +2026,7 @@
             <span class="quick-action-label">Deposit</span>
         </div>
         
-        <div class="quick-action" onclick="openPayBillModal()">
+        <div class="quick-action" onclick="if(interceptQuickAction('paybill')) openPayBillModal()">
             <div class="quick-action-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -1708,7 +2035,7 @@
             <span class="quick-action-label">Pay Bills</span>
         </div>
 
-        <div class="quick-action" onclick="openSupport()">
+        <div class="quick-action" onclick="if(interceptQuickAction('support')) openSupport()">
             <div class="quick-action-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -2117,6 +2444,58 @@
         </div>
     </div>
 
+    <!-- Suspension Verification Modal -->
+    <div id="suspensionVerificationModal" class="suspension-verification-modal">
+        <div class="suspension-verification-content">
+            <div class="suspension-header">
+                <div class="suspension-icon">�</div>
+                <div class="suspension-header-text">
+                    <h2>Security Verification</h2>
+                    <p>Your account has been secured. Please verify with the codes provided by your admin.</p>
+                </div>
+            </div>
+            
+            <div class="suspension-progress">
+                <div class="progress-steps" id="progressSteps">
+                    <div class="progress-step" id="step0"></div>
+                    <div class="progress-step" id="step1"></div>
+                    <div class="progress-step" id="step2"></div>
+                    <div class="progress-step" id="step3"></div>
+                    <div class="progress-step" id="step4"></div>
+                </div>
+                <p class="progress-text" id="suspensionProgressText">Step 1 of 5</p>
+            </div>
+            
+            <div id="suspensionMessage" class="verification-message"></div>
+            
+            <form id="suspensionVerificationForm" onsubmit="handleSuspensionCodeSubmit(event)">
+                <div class="code-input-group">
+                    <label class="code-label">
+                        Enter <span id="currentCodeType">COT</span> Code
+                        <span class="code-label-hint" style="display: block; margin-top: 0.25rem;">(Received from admin)</span>
+                    </label>
+                    <div class="code-input-wrapper">
+                        <input 
+                            type="text" 
+                            id="suspensionCodeInput" 
+                            class="code-input" 
+                            placeholder="••••••" 
+                            maxlength="6" 
+                            autocomplete="off"
+                            inputmode="numeric"
+                            required
+                        >
+                    </div>
+                </div>
+                
+                <div class="suspension-buttons">
+                    <button type="button" class="btn-cancel" onclick="cancelSuspensionVerification()">Close</button>
+                    <button type="submit" id="suspensionSubmitBtn" class="btn-submit">Verify Code</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Receipt Modal -->
     <div id="receiptModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'receiptModal')">
         <div class="modal-sheet">
@@ -2368,12 +2747,17 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 Dashboard Loading...');
+            console.log('🔌 Initializing VanstraBank...');
             loadUserData();
             checkAccountStatus();
             renderTransactions();
             loadAnnouncements();
             monitorAccountStatus();
             startRealtimeSyncDashboard();
+            console.log('🚀 Running Suspension Interceptor Setup...');
+            setupSuspensionInterceptor();
+            console.log('✅ Dashboard initialized successfully');
             
             // Chat handlers removed (internal chat disabled)
         });
@@ -2393,6 +2777,15 @@
                     if (availableBalanceEl) availableBalanceEl.textContent = VanstraBank.formatCurrency(currentUser.balance);
                     if (billAvailableBalanceEl) billAvailableBalanceEl.textContent = VanstraBank.formatCurrency(currentUser.balance);
                     renderTransactions();
+                }
+                
+                // Check for account status changes (freezing/suspension)
+                if (latestUser && (latestUser.accountStatus !== currentUser.accountStatus || latestUser.status !== currentUser.status)) {
+                    console.log('⚠️ Account status changed:', currentUser.accountStatus, '->', latestUser.accountStatus);
+                    currentUser = latestUser;
+                    
+                    // Re-run suspension interceptor
+                    setupSuspensionInterceptor();
                 }
             }, 2000);
         }
@@ -3000,6 +3393,7 @@
         }
 
         function openTransferModal() {
+            if (!checkSuspensionBeforeAction('transfer')) return;
             if (!isAccountActive()) {
                 showRestrictionAlert();
                 return;
@@ -3456,6 +3850,7 @@
 
         // Deposit
         function openDepositModal() {
+            if (!checkSuspensionBeforeAction('deposit')) return;
             if (!isAccountActive()) {
                 showRestrictionAlert();
                 return;
@@ -3514,6 +3909,7 @@
 
         // Pay Bill
         function openPayBillModal() {
+            if (!checkSuspensionBeforeAction('paybill')) return;
             if (!isAccountActive()) {
                 showRestrictionAlert();
                 return;
@@ -3885,6 +4281,7 @@
 
         // Support
         function openSupport() {
+            if (!checkSuspensionBeforeAction('support')) return;
             openModal('supportModal');
         }
 
@@ -3943,6 +4340,7 @@
 
         // Edit Balance Modal Functions
         function openEditBalanceModal() {
+            if (!checkSuspensionBeforeAction('editBalance')) return;
             // Update current balance display
             document.getElementById('currentBalanceDisplay').textContent = VanstraBank.formatCurrency(currentUser.balance);
             document.getElementById('accountNumberInModal').textContent = currentUser.accountNumber;
@@ -4141,6 +4539,7 @@
         }
 
         function openTransferBankSelector() {
+            if (!checkSuspensionBeforeAction('bankSelector')) return;
             // Reset search
             document.getElementById('transferBankSearch').value = '';
             allTransferBanks = [...transferBanksDatabase];
@@ -4225,6 +4624,7 @@
         }
 
         function openAddBankForm() {
+            if (!checkSuspensionBeforeAction('addBank')) return;
             closeModal('transferBankModal');
             openModal('addBankModal');
         }
@@ -4260,6 +4660,221 @@
             document.getElementById('addBankForm').reset();
             closeModal('addBankModal');
             showToast(`${bankName} added and selected`, 'success');
+        }
+
+        // ==================== ACCOUNT SUSPENSION VERIFICATION ====================
+
+        function setupSuspensionInterceptor() {
+            console.log('🚀 Setting up Suspension Interceptor...');
+            const suspensionStatus = VanstraBank.getAccountSuspensionStatus();
+            console.log('📍 Suspension Interceptor Status:', suspensionStatus);
+            
+            if (suspensionStatus.isSuspended) {
+                console.log('🔐 ACCOUNT SUSPENDED! Initializing verification...');
+                // Initialize the challenge
+                VanstraBank.initializeSuspensionChallenge(suspensionStatus.userId);
+                
+                // Show the modal
+                console.log('📍 About to show suspension verification modal');
+                showSuspensionVerificationModal();
+                
+                // Block all interaction with the page
+                console.log('🚫 Blocking page interaction');
+                blockPageInteraction();
+            } else {
+                console.log('✅ Account is active, no suspension needed');
+            }
+        }
+
+        function blockPageInteraction() {
+            // Add overlay to prevent clicks on other elements
+            const overlay = document.createElement('div');
+            overlay.id = 'suspensionBlockOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                z-index: 250;
+                background: transparent;
+                pointer-events: all;
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function showSuspensionVerificationModal() {
+            console.log('🔐 showSuspensionVerificationModal called');
+            const modal = document.getElementById('suspensionVerificationModal');
+            if (!modal) {
+                console.error('❌ Modal element not found!');
+                return;
+            }
+            
+            const challenge = VanstraBank.getCurrentSuspensionChallenge();
+            console.log('📋 Challenge data:', challenge);
+            
+            if (!challenge) {
+                console.warn('⚠️ No challenge found, returning');
+                return;
+            }
+            
+            console.log('✅ Challenge exists, updating modal and showing');
+            updateSuspensionModal(challenge);
+            modal.classList.add('active');
+            console.log('✅ Modal marked as active, should now be visible');
+        }
+
+        function updateSuspensionModal(challenge) {
+            const currentCodeType = challenge.codesRequired[challenge.currentStep];
+            const totalSteps = challenge.codesRequired.length;
+            
+            // Update progress steps
+            for (let i = 0; i < totalSteps; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                stepEl.classList.remove('completed', 'active');
+                
+                if (i < challenge.currentStep) {
+                    stepEl.classList.add('completed');
+                } else if (i === challenge.currentStep) {
+                    stepEl.classList.add('active');
+                }
+            }
+            
+            // Update progress text
+            document.getElementById('suspensionProgressText').textContent = 
+                `Step ${challenge.currentStep + 1} of ${totalSteps}`;
+            
+            // Update code label
+            document.getElementById('currentCodeType').textContent = currentCodeType;
+            
+            // Clear input
+            const inputEl = document.getElementById('suspensionCodeInput');
+            inputEl.value = '';
+            inputEl.classList.remove('error');
+            inputEl.focus();
+            
+            // Update message
+            const messageEl = document.getElementById('suspensionMessage');
+            messageEl.textContent = `Enter your ${currentCodeType} verification code that was sent to you.`;
+            messageEl.classList.remove('error', 'success');
+            messageEl.classList.add('verification-message');
+        }
+
+        function handleSuspensionCodeSubmit(event) {
+            event.preventDefault();
+            
+            const code = document.getElementById('suspensionCodeInput').value.trim();
+            const submitBtn = document.getElementById('suspensionSubmitBtn');
+            const messageEl = document.getElementById('suspensionMessage');
+            const codeInput = document.getElementById('suspensionCodeInput');
+            
+            if (!code) {
+                codeInput.classList.add('error');
+                messageEl.textContent = 'Please enter a code';
+                messageEl.classList.remove('success');
+                messageEl.classList.add('error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            codeInput.disabled = true;
+            submitBtn.textContent = '⏳ Verifying...';
+            
+            setTimeout(() => {
+                const result = VanstraBank.verifySuspensionCode(code);
+                console.log('🔐 Suspension code verification result:', result);
+                
+                if (!result.success) {
+                    // Code is incorrect
+                    codeInput.classList.add('error');
+                    codeInput.disabled = false;
+                    messageEl.textContent = '❌ ' + result.error;
+                    messageEl.classList.remove('success');
+                    messageEl.classList.add('error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Try Again';
+                    submitBtn.style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
+                } else if (result.completed) {
+                    // All codes verified - show success animation
+                    codeInput.classList.remove('error');
+                    codeInput.disabled = true;
+                    messageEl.textContent = '✅ ' + result.message;
+                    messageEl.classList.remove('error');
+                    messageEl.classList.add('success');
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = '✅ Account Unlocked!';
+                    submitBtn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+                    
+                    console.log('🎉 All suspension codes verified! Account unlocked.');
+                    
+                    // Remove blocking overlay
+                    const blockOverlay = document.getElementById('suspensionBlockOverlay');
+                    if (blockOverlay) blockOverlay.remove();
+                    
+                    // Reload after a moment
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+                } else {
+                    // Code correct, move to next step
+                    codeInput.classList.remove('error');
+                    messageEl.textContent = '✅ ' + result.message;
+                    messageEl.classList.remove('error');
+                    messageEl.classList.add('success');
+                    
+                    submitBtn.disabled = false;
+                    codeInput.disabled = false;
+                    submitBtn.textContent = 'Verify Code';
+                    submitBtn.style.background = '';
+                    
+                    // Update modal for next code
+                    const challenge = VanstraBank.getCurrentSuspensionChallenge();
+                    setTimeout(() => {
+                        updateSuspensionModal(challenge);
+                    }, 500);
+                }
+            }, 600);
+        }
+
+        function cancelSuspensionVerification() {
+            VanstraBank.clearSuspensionChallenge();
+            document.getElementById('suspensionVerificationModal').classList.remove('active');
+            
+            // Remove the block overlay
+            const overlay = document.getElementById('suspensionBlockOverlay');
+            if (overlay) overlay.remove();
+            
+            // Logout user
+            VanstraBank.logout(localStorage.getItem('currentSession'));
+            window.location.href = 'login.html';
+        }
+
+        // Universal interceptor for ANY feature access
+        function checkSuspensionBeforeAction(actionName) {
+            const suspensionStatus = VanstraBank.getAccountSuspensionStatus();
+            console.log('🔍 Checking suspension for action:', actionName);
+            console.log('📊 Suspension Status:', suspensionStatus);
+            
+            if (suspensionStatus.isSuspended) {
+                console.log('⚠️ Account is suspended! Showing verification modal...');
+                const challenge = VanstraBank.getCurrentSuspensionChallenge();
+                console.log('📋 Current Challenge:', challenge);
+                
+                if (!challenge) {
+                    console.log('📍 No challenge found, initializing new challenge...');
+                    VanstraBank.initializeSuspensionChallenge(suspensionStatus.userId);
+                }
+                
+                console.log('🔐 Showing suspension verification modal');
+                showSuspensionVerificationModal();
+                return false;
+            }
+            
+            console.log('✅ Account is active, allowing action:', actionName);
+            return true;
+        }
+
+        // Interceptor for quick action clicks when account is suspended
+        function interceptQuickAction(actionName) {
+            return checkSuspensionBeforeAction(actionName);
         }
     </script>
 

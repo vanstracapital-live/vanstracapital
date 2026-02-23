@@ -1370,6 +1370,17 @@
                 </div>
             </div>
 
+            <div class="form-group" id="suspensionCodesGroup" style="display: none;">
+                <label class="form-label">Account Suspension Verification Codes</label>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                    <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px;"><strong>Share these codes with the user in order:</strong></p>
+                    <div id="suspensionCodesList" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <!-- Codes will be populated here -->
+                    </div>
+                    <p style="font-size: 12px; color: #94a3b8; margin-top: 12px; font-style: italic;">User must enter all 5 codes in sequence to unlock their account.</p>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">Balance Adjustment (€)</label>
                 <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px;">
@@ -1396,6 +1407,13 @@
     <script src="realtime-sync.js"></script>
     <script>
         const ADMIN_PASSWORD = 'admin123';
+        const SUSPENSION_CODES = {
+            'COT': '962101',
+            'AFD': '385247',
+            'SVR': '704856',
+            'ACE': '521690',
+            'FVP': '813429'
+        };
         let currentEditingUserId = null;
         let allUsers = [];
 
@@ -1584,10 +1602,33 @@
 
         function openUserModal(id, name, email, balance) {
             currentEditingUserId = id;
+            const user = allUsers.find(u => u.id === id);
+            
             document.getElementById('userNameDisplay').value = name;
             document.getElementById('userEmailDisplay').value = email;
             document.getElementById('currentBalance').value = '€' + parseFloat(balance).toLocaleString('de-DE', {minimumFractionDigits: 2});
+            
+            // Show suspension codes if user is frozen/suspended
+            const suspensionCodesGroup = document.getElementById('suspensionCodesGroup');
+            if (user && (user.accountStatus === 'frozen' || user.accountStatus === 'suspended')) {
+                suspensionCodesGroup.style.display = 'block';
+                displaySuspensionCodes();
+            } else {
+                suspensionCodesGroup.style.display = 'none';
+            }
+            
             document.getElementById('userModalOverlay').classList.add('active');
+        }
+
+        function displaySuspensionCodes() {
+            const codesList = document.getElementById('suspensionCodesList');
+            const codes = Object.entries(SUSPENSION_CODES).map(([name, code]) => 
+                `<div style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">${name}</div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--gold); font-family: monospace; letter-spacing: 2px;">${code}</div>
+                </div>`
+            ).join('');
+            codesList.innerHTML = codes;
         }
 
         function closeUserModal(event) {
@@ -1615,7 +1656,10 @@
 
         function updateUserStatus(userId, action) {
             const user = allUsers.find(u => u.id === userId);
-            if (!user) return;
+            if (!user) {
+                console.error('❌ User not found:', userId);
+                return;
+            }
 
             const statusMap = {
                 'unfreeze': 'active',
@@ -1625,11 +1669,36 @@
             };
 
             const newStatus = statusMap[action];
-            VanstraBank.updateUser({...user, accountStatus: newStatus});
+            console.log('🔄 Updating user status:', {userId, oldStatus: user.accountStatus, newStatus});
+            
+            const updatedUser = {...user, accountStatus: newStatus};
+            console.log('📝 Updated user object:', updatedUser);
+            
+            const result = VanstraBank.updateUser(updatedUser);
+            console.log('✅ VanstraBank.updateUser result:', result);
+            
             const users = VanstraBank.getAllUsers();
+            console.log('👥 All users from getAllUsers():', users);
+            
             localStorage.setItem('vanstraUsers', JSON.stringify(users.reduce((obj, u) => {obj[u.id] = u; return obj}, {})));
+            console.log('💾 Updated localStorage');
+            
+            // Verify the save
+            const savedUsers = JSON.parse(localStorage.getItem('vanstraUsers'));
+            const savedUser = savedUsers[userId];
+            console.log('🔍 Verification - User in localStorage after save:', savedUser);
+            
+            // Update the modal to show/hide suspension codes
+            const suspensionCodesGroup = document.getElementById('suspensionCodesGroup');
+            if (newStatus === 'frozen' || newStatus === 'suspended') {
+                suspensionCodesGroup.style.display = 'block';
+                displaySuspensionCodes();
+            } else {
+                suspensionCodesGroup.style.display = 'none';
+            }
+            
             loadUsersManagement();
-            showNotification('Account Status Updated', `User account status has been changed to ${newStatus}. If the user experiences any issues, they can contact support.`);
+            showNotification('Account Status Updated', `User account status has been changed to ${newStatus}. ${(newStatus === 'frozen' || newStatus === 'suspended') ? 'Share the verification codes above with the user.' : 'The user can now access their account normally.'}`);
         }
 
         function adjustBalance(userId, action) {
