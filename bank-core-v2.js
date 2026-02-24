@@ -170,10 +170,19 @@ const VanstraBank = (function() {
     }
 
     function login(email, password) {
-        const users = JSON.parse(localStorage.getItem('vanstraUsers'));
-        const user = Object.values(users).find(u => u.email === email);
+        console.log('🔐 LOGIN ATTEMPT:', email);
+        const usersData = localStorage.getItem('vanstraUsers');
+        console.log('📦 Users data from localStorage:', usersData ? 'exists' : 'MISSING');
+
+        const users = usersData ? JSON.parse(usersData) : {};
+        console.log('👥 All users found:', Object.keys(users).length);
+        // Normalize email for lookup (case-insensitive)
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const user = Object.values(users).find(u => (u.email || '').trim().toLowerCase() === normalizedEmail);
+        console.log('🔍 User lookup result:', user ? `ID=${user.id}, Email=${user.email}` : 'NOT FOUND');
 
         if (!user) {
+            console.log('❌ User not found in system for email:', normalizedEmail);
             return { success: false, error: 'Invalid email or password' };
         }
 
@@ -181,9 +190,24 @@ const VanstraBank = (function() {
             return { success: false, error: 'Account locked. Contact support.' };
         }
 
-        // Verify password hash
-        if (user.passwordHash !== hashString(password)) {
-            emit('login_failed', { email, reason: 'invalid_password' });
+        // Verify password (support multiple legacy formats)
+        const plain = password || '';
+        const computedHash = hashString(plain);
+        const doubleHash = hashString(computedHash);
+
+        const storedHash = user.passwordHash || user.password || null;
+
+        const passwordMatches = (
+            storedHash && (
+                storedHash === computedHash || // normal
+                storedHash === doubleHash ||   // legacy double-hash
+                storedHash === plain           // stored as plain (fallback)
+            )
+        );
+
+        if (!passwordMatches) {
+            console.log('❌ Password verification failed for user:', user.email, { storedHashPreview: (storedHash || '').toString().substr(0,8) });
+            emit('login_failed', { email: user.email, reason: 'invalid_password' });
             return { success: false, error: 'Invalid email or password' };
         }
 
@@ -198,9 +222,15 @@ const VanstraBank = (function() {
 
         users[user.id] = user;
         localStorage.setItem('vanstraUsers', JSON.stringify(users));
+        console.log('✅ User saved to localStorage');
 
         // Create session
         const session = createSession(user.id);
+        if (!session || !session.token) {
+            console.error('❌ Failed to create session');
+            return { success: false, error: 'Session creation failed. Please try again.' };
+        }
+        console.log('🔑 Session created:', {token: session.token.substring(0, 20) + '...'});
 
         // Emit to admin
         emit('user_login', { userId: user.id, user: sanitizeForAdmin(user) });
@@ -234,6 +264,7 @@ const VanstraBank = (function() {
             console.warn('Supabase unavailable', e);
         }
 
+        console.log('✅ LOGIN SUCCESS:', {email: user.email, sessionToken: session.token.substring(0, 20) + '...'});
         return { 
             success: true, 
             user: sanitizeForClient(user),
@@ -242,28 +273,52 @@ const VanstraBank = (function() {
     }
 
     function logout(sessionToken) {
+        console.log('🚪 LOGOUT:', sessionToken ? 'Valid token' : 'No token');
         const sessions = JSON.parse(localStorage.getItem('vanstraSessions'));
         const session = sessions[sessionToken];
+        
+        console.log('📍 Session found:', session ? `UserID=${session.userId}` : 'NOT FOUND');
         
         if (session) {
             const users = JSON.parse(localStorage.getItem('vanstraUsers'));
             const user = users[session.userId];
             if (user) {
+                console.log('👤 Updating user:', user.email);
                 user.isOnline = false;
                 users[session.userId] = user;
                 localStorage.setItem('vanstraUsers', JSON.stringify(users));
+                console.log('✅ User marked offline');
                 
                 emit('user_logout', { userId: session.userId });
             }
             delete sessions[sessionToken];
             localStorage.setItem('vanstraSessions', JSON.stringify(sessions));
+            console.log('✅ Session removed');
         }
         
+        localStorage.removeItem('currentSession');
+        console.log('✅ currentSession cleared from localStorage');
         return { success: true };
     }
 
     function createSession(userId) {
-        const sessions = JSON.parse(localStorage.getItem('vanstraSessions'));
+        console.log('🔑 createSession for user:', userId);
+        
+        let sessions = {};
+        const sessionsData = localStorage.getItem('vanstraSessions');
+        
+        if (sessionsData) {
+            try {
+                sessions = JSON.parse(sessionsData);
+                console.log('📍 Loaded existing sessions:', Object.keys(sessions).length);
+            } catch (e) {
+                console.error('❌ Failed to parse vanstraSessions:', e);
+                sessions = {};
+            }
+        } else {
+            console.log('📍 No existing sessions found, starting fresh');
+        }
+        
         const token = 'SES-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8).toUpperCase();
         
         sessions[token] = {
@@ -272,26 +327,58 @@ const VanstraBank = (function() {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
         };
         
-        localStorage.setItem('vanstraSessions', JSON.stringify(sessions));
-        localStorage.setItem('currentSession', token);
+        try {
+            localStorage.setItem('vanstraSessions', JSON.stringify(sessions));
+            console.log('✅ Sessions saved to localStorage');
+        } catch (e) {
+            console.error('❌ Failed to save sessions:', e);
+            return null;
+        }
+        
+        try {
+            localStorage.setItem('currentSession', token);
+            console.log('✅ currentSession token set:', token.substring(0, 20) + '...');
+        } catch (e) {
+            console.error('❌ Failed to set currentSession:', e);
+            return null;
+        }
         
         return { token };
     }
 
     function getCurrentUser() {
         const sessionToken = localStorage.getItem('currentSession');
-        if (!sessionToken) return null;
+        console.log('🔍 getCurrentUser - SessionToken:', sessionToken ? sessionToken.substring(0, 20) + '...' : 'NONE');
+        
+        if (!sessionToken) {
+            console.log('❌ No session token found');
+            return null;
+        }
 
-        const sessions = JSON.parse(localStorage.getItem('vanstraSessions'));
+        const sessionsData = localStorage.getItem('vanstraSessions');
+        const sessions = sessionsData ? JSON.parse(sessionsData) : {};
         const session = sessions[sessionToken];
         
-        if (!session || new Date(session.expiresAt) < new Date()) {
+        console.log('📍 Session lookup:', session ? `Found, UserID=${session.userId}` : 'NOT FOUND');
+        
+        if (!session) {
+            console.log('❌ Session not in vanstraSessions');
+            localStorage.removeItem('currentSession');
+            return null;
+        }
+        
+        if (new Date(session.expiresAt) < new Date()) {
+            console.log('❌ Session expired:', session.expiresAt);
             localStorage.removeItem('currentSession');
             return null;
         }
 
-        const users = JSON.parse(localStorage.getItem('vanstraUsers'));
-        return users[session.userId] || null;
+        const usersData = localStorage.getItem('vanstraUsers');
+        const users = usersData ? JSON.parse(usersData) : {};
+        const user = users[session.userId];
+        console.log('👤 User lookup:', user ? `Found - ${user.email}` : 'NOT FOUND');
+        
+        return user || null;
     }
 
     function isAuthenticated() {

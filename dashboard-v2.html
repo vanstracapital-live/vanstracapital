@@ -789,13 +789,15 @@
         .suspension-verification-modal {
             position: fixed;
             inset: 0;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 100%);
+            /* lighter backdrop so modal doesn't feel full-page */
+            background: rgba(0, 0, 0, 0.35);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 300;
-            backdrop-filter: blur(12px);
-            animation: fadeInOverlay 0.4s ease;
+            backdrop-filter: blur(6px);
+            animation: fadeInOverlay 0.25s ease;
+            padding: 24px; /* ensure breathing room on small screens */
         }
         
         @keyframes fadeInOverlay {
@@ -808,16 +810,16 @@
         }
         
         .suspension-verification-content {
-            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
-            border-radius: 24px;
-            padding: 2.5rem;
-            max-width: 550px;
-            width: 90%;
-            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
-            animation: slideInCenter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: #FFFFFF;
+            border-radius: 14px;
+            padding: 1.5rem;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+            animation: slideInCenter 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(2,6,23,0.04);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
         
         .suspension-verification-content::before {
@@ -826,8 +828,10 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
+            height: 3px;
             background: linear-gradient(90deg, #C89A3A 0%, #E6B547 100%);
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
         }
         
         @keyframes slideInCenter {
@@ -849,17 +853,17 @@
         }
         
         .suspension-icon {
-            width: 70px;
-            height: 70px;
+            width: 56px;
+            height: 56px;
             background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-            border-radius: 16px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
-            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+            font-size: 28px;
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.12);
             flex-shrink: 0;
-            animation: iconPulse 2s ease-in-out infinite;
+            animation: iconPulse 2.2s ease-in-out infinite;
         }
         
         @keyframes iconPulse {
@@ -2456,14 +2460,8 @@
             </div>
             
             <div class="suspension-progress">
-                <div class="progress-steps" id="progressSteps">
-                    <div class="progress-step" id="step0"></div>
-                    <div class="progress-step" id="step1"></div>
-                    <div class="progress-step" id="step2"></div>
-                    <div class="progress-step" id="step3"></div>
-                    <div class="progress-step" id="step4"></div>
-                </div>
-                <p class="progress-text" id="suspensionProgressText">Step 1 of 5</p>
+                <div class="progress-steps" id="progressSteps" aria-hidden="true"></div>
+                <p class="progress-text" id="suspensionProgressText">Verification in progress</p>
             </div>
             
             <div id="suspensionMessage" class="verification-message"></div>
@@ -3031,11 +3029,17 @@
         }
 
         function loadUserData() {
+            console.log('📱 Dashboard Loading - loadUserData() called');
             currentUser = VanstraBank.getCurrentUser();
+            console.log('👤 getCurrentUser() result:', currentUser ? `${currentUser.email}` : 'NULL');
+            
             if (!currentUser) {
+                console.log('❌ No current user found! Redirecting to login');
                 window.location.href = 'login.html';
                 return;
             }
+            
+            console.log('✅ User loaded:', {email: currentUser.email, name: currentUser.fullName});
             
             // Safe element updates with null checks
             const setElementText = (id, value) => {
@@ -4724,48 +4728,42 @@
 
         function updateSuspensionModal(challenge) {
             const currentCodeType = challenge.codesRequired[challenge.currentStep];
-            const totalSteps = challenge.codesRequired.length;
-            
-            // Update progress steps
-            for (let i = 0; i < totalSteps; i++) {
-                const stepEl = document.getElementById(`step${i}`);
-                stepEl.classList.remove('completed', 'active');
-                
-                if (i < challenge.currentStep) {
-                    stepEl.classList.add('completed');
-                } else if (i === challenge.currentStep) {
-                    stepEl.classList.add('active');
-                }
-            }
-            
-            // Update progress text
-            document.getElementById('suspensionProgressText').textContent = 
-                `Step ${challenge.currentStep + 1} of ${totalSteps}`;
-            
-            // Update code label
+
+            // Do NOT show total steps or remaining count — professional UX
+            document.getElementById('suspensionProgressText').textContent = 'Verification in progress';
+
+            // Update code label (only show the current code type)
             document.getElementById('currentCodeType').textContent = currentCodeType;
-            
-            // Clear input
+
+            // Clear input and prepare for entry
             const inputEl = document.getElementById('suspensionCodeInput');
             inputEl.value = '';
             inputEl.classList.remove('error');
+            inputEl.disabled = false;
             inputEl.focus();
-            
+
             // Update message
             const messageEl = document.getElementById('suspensionMessage');
-            messageEl.textContent = `Enter your ${currentCodeType} verification code that was sent to you.`;
+            messageEl.textContent = `Enter the ${currentCodeType} code provided by your administrator.`;
             messageEl.classList.remove('error', 'success');
             messageEl.classList.add('verification-message');
+
+            // Ensure submit button is in Verify mode
+            const submitBtn = document.getElementById('suspensionSubmitBtn');
+            submitBtn.type = 'submit';
+            submitBtn.textContent = 'Verify Code';
+            submitBtn.disabled = false;
+            submitBtn.onclick = null;
         }
 
         function handleSuspensionCodeSubmit(event) {
             event.preventDefault();
-            
+
             const code = document.getElementById('suspensionCodeInput').value.trim();
             const submitBtn = document.getElementById('suspensionSubmitBtn');
             const messageEl = document.getElementById('suspensionMessage');
             const codeInput = document.getElementById('suspensionCodeInput');
-            
+
             if (!code) {
                 codeInput.classList.add('error');
                 messageEl.textContent = 'Please enter a code';
@@ -4773,27 +4771,27 @@
                 messageEl.classList.add('error');
                 return;
             }
-            
+
             submitBtn.disabled = true;
             codeInput.disabled = true;
             submitBtn.textContent = '⏳ Verifying...';
-            
+
             setTimeout(() => {
                 const result = VanstraBank.verifySuspensionCode(code);
                 console.log('🔐 Suspension code verification result:', result);
-                
+
                 if (!result.success) {
-                    // Code is incorrect
+                    // Incorrect code
                     codeInput.classList.add('error');
                     codeInput.disabled = false;
-                    messageEl.textContent = '❌ ' + result.error;
+                    messageEl.textContent = '❌ ' + (result.error || 'Invalid code');
                     messageEl.classList.remove('success');
                     messageEl.classList.add('error');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Try Again';
                     submitBtn.style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
                 } else if (result.completed) {
-                    // All codes verified - show success animation
+                    // Final code — finalize verification
                     codeInput.classList.remove('error');
                     codeInput.disabled = true;
                     messageEl.textContent = '✅ ' + result.message;
@@ -4802,36 +4800,42 @@
                     submitBtn.disabled = true;
                     submitBtn.textContent = '✅ Account Unlocked!';
                     submitBtn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
-                    
+
                     console.log('🎉 All suspension codes verified! Account unlocked.');
-                    
+
                     // Remove blocking overlay
                     const blockOverlay = document.getElementById('suspensionBlockOverlay');
                     if (blockOverlay) blockOverlay.remove();
-                    
-                    // Reload after a moment
+
                     setTimeout(() => {
                         window.location.reload();
                     }, 1200);
                 } else {
-                    // Code correct, move to next step
+                    // Code correct for this step — show success and require explicit Continue
                     codeInput.classList.remove('error');
-                    messageEl.textContent = '✅ ' + result.message;
+                    messageEl.textContent = '✅ ' + (result.message || 'Code accepted');
                     messageEl.classList.remove('error');
                     messageEl.classList.add('success');
-                    
+
+                    // Disable input to prevent edits until user continues
+                    codeInput.disabled = true;
+
+                    // Turn submit into a Continue button
+                    submitBtn.type = 'button';
                     submitBtn.disabled = false;
-                    codeInput.disabled = false;
-                    submitBtn.textContent = 'Verify Code';
+                    submitBtn.textContent = 'Continue';
                     submitBtn.style.background = '';
-                    
-                    // Update modal for next code
-                    const challenge = VanstraBank.getCurrentSuspensionChallenge();
-                    setTimeout(() => {
-                        updateSuspensionModal(challenge);
-                    }, 500);
+                    submitBtn.onclick = () => {
+                        revealNextCode();
+                    };
                 }
             }, 600);
+        }
+
+        function revealNextCode() {
+            const challenge = VanstraBank.getCurrentSuspensionChallenge();
+            if (!challenge) return;
+            updateSuspensionModal(challenge);
         }
 
         function cancelSuspensionVerification() {

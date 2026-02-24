@@ -132,17 +132,30 @@
             const loginBtn = document.getElementById('loginBtn');
             const errorMsg = document.getElementById('errorMessage');
 
+            console.log('📝 LOGIN FORM SUBMITTED:', {email});
             loginBtn.disabled = true;
             loginBtn.textContent = 'Signing in...';
             errorMsg.classList.remove('show');
 
             setTimeout(() => {
+                console.log('🔐 Calling VanstraBank.login()');
                 const result = VanstraBank.login(email, password);
+                console.log('📋 Login result:', {success: result.success, hasSessionToken: !!result.sessionToken});
+                
                 if (result.success) {
+                    console.log('✅ Login successful, setting currentSession');
                     localStorage.setItem('currentSession', result.sessionToken);
+                    console.log('💾 currentSession saved:', result.sessionToken.substring(0, 20) + '...');
+                    
+                    // Verify it was saved
+                    const verify = localStorage.getItem('currentSession');
+                    console.log('✓ Verification: currentSession in localStorage:', verify ? 'YES' : 'NO');
+                    
                     // Redirect to dashboard
+                    console.log('🚀 Redirecting to dashboard...');
                     window.location.href = 'dashboard-v2.html';
                 } else {
+                    console.log('❌ Login failed:', result.error);
                     errorMsg.textContent = result.error;
                     errorMsg.classList.add('show');
                     loginBtn.disabled = false;
